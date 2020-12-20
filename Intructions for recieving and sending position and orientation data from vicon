@@ -1,0 +1,86 @@
+SETTING UP VICON
+
+To set up the vicon connection to recieve data from the main vicon pc, follow the following steps:
+	1. switch on the vicon system on the main pc: frequency 30-50Hz
+	2. Use a usb to ethernet adapter on an another port of the main pc to connect the pc to the lan
+	3. after logging into the internet, note down the ip address of the system
+	4. On the laptop conected to the lan via wifi or lan ping the ip address, see if the packets are recieved
+	5. start the vicon tracker on the main pc
+	6. in the vicon_bridge package on ros, find the launch file and set the ip address to be <ip address of the system set earlier>:801
+		7. run roscore(NO NEED)
+	8. run the roslaunch file following instructions from http://wiki.ros.org/vicon_bridge
+	9. Ensure that the robot's x axis and world's x axis align together in the beginning so that the external position fusion works properly(initial yaw and yaw reported by pixhawk equals zero)
+
+________________________________________________________________________________
+INITIALIZING MAVLINK COMMUNICATION
+
+-attach the telemetry module to the pc with mavros 
+
+-ls /dev/tty*: to look at the list of serial ports, ttyUSBx something like this)
+			https://dev.px4.io/v1.9.0/en/debug/system_console.html#linux--mac-os-screen
+
+- To establish mavlink via mavros:(There is no need to follow the tabbed lines)
+
+		- start roscore 
+		- go to catkin_ws/src/mavros/mavros/launch/
+		- if you have apm or px4 loaded, select the appropriate px4.launch or the other
+		- in the launch file, in the tags fcu_url: <address of the port>:baud rate, address of the usb port could be found by ls /dev/tty*, baud rate 57600
+	- roslaunch mavros px4.launch : run this in terminal
+
+		- remeber that the above commannd doesn't run with connection already established with qgroundcontrol. So close QGC and then run the above: FIXED in the launch file with the address of udp which is detedted by qgc(see starting qgc in the part below)
+
+
+__________________________________________________________________
+Transporting data from ros vicon bridge to mavlink
+- An example of using vicon data 
+https://404warehouse.net/2015/12/20/autopilot-offboard-control-using-mavros-package-on-ros/
+- set the ip address to 10.110.146.15:801(the main machine) the address of main vicon pc
+
+_______________________________________________________
+Getting vicon data into px4
+
+	-USING plugin: 'vision_pose_estimate' (look at px4.config for parameters)
+
+	-Ensure the coordinates are coming in ENU frame from vicon system
+		https://dev.px4.io/master/en/ros/external_position_estimation.html#ros_reference_frames
+
+	-In the vicon launch file: parent_frame has been declared as /world and in the vicon software name of the quadcopter object has been kept to be quad: so the child_frame(tf) is mostly 'quad' or 'vicon/quad' check it
+	-in the px4.config
+		-under 'vision_pose':
+			vision_pose:
+			  tf:
+			    listen: true           # enable tf listener (disable topic subscribers)
+			    frame_id: "world"
+			    child_frame_id: "vicon/quad" #CHECK THIS
+			    rate_limit: 40.0
+		change these parameters as required
+	
+	-CHange the EKF parameters as follows: 
+	https://dev.px4.io/master/en/ros/external_position_estimation.html#ekf2-tuningconfiguration
+		-EKF2_AID_MASK=vision_position, vision_way, external_vision_rotation (not sure about vision velocity and external vision: check in ekf2 implementation documentation or trial and error)
+		- Look at the other parameters
+
+	-check this before first flight:
+		https://dev.px4.io/master/en/ros/external_position_estimation.html#check-external-estimate	
+
+___________________________________________
+starting qgc along with mavros
+
+    Open QGroundControl Station, and click the "Q" icon on the top left, entering "Preferences" panel
+    Click "General" on the left, then find "Autoconnect to the following devices:", opt out "SiK Radio", and opt in "UDP"
+    Close QGroundControl to ensure that it is disconnected from the FCU
+    Edit the px4.launch file, which is found in the Mavros package folder, add "udp://:14560@127.0.0.1:14550", 14560 and 14550 are any unused ports
+    Run roslaunch mavros px4.launch
+    Open QGroundControl
+
+Now a chain FCU <---telemetry---> MAVROS <---UDP---> QGC is established
+____________________________________________
+
+____________________________________________________________________
+for visualization of the system on your pc use rviz
+- roslaunch mavros_extras rviz_visual.launch: change the launch default parameters in the launch file
+- rosrun rviz rviz: 
+- add tf frame 
+
+
+
