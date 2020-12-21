@@ -1,0 +1,14 @@
+<launch>
+	<node pkg="vicon_bridge" type="vicon_bridge" name="vicon" output="screen">
+		<param name="stream_mode" value="ClientPull" type="str" />
+		<!--param name="datastream_hostport" value="192.168.0.13:801" type="str" /-->
+		<param name="datastream_hostport" value="10.110.146.15:801" type="str" />
+		<param name="tf_ref_frame_id" value="/world" type="str" />		
+		<!-- param name="tf_ref_frame_id" value="/map" type="str" /-->
+		
+		<!-- note that the child frame currently is by the name of "vicon/quad/quad" and parent frame "/world" -->
+		
+<!-- 		<remap from="/vicon/quad/quad" to="/mavros/mocap/tf" /> --> 
+<!-- we are directly using tf so no need as done in the above line-->
+		</node>
+</launch>

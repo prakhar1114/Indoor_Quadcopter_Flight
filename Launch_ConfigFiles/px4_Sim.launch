@@ -1,0 +1,39 @@
+<launch>
+	<!-- vim: set ft=xml noet : -->
+	<!-- example launch script for PX4 based FCU's -->
+	
+	<!-- arg name="fcu_url" default="/dev/ttyACM0:115200" / -->
+	<arg name="fcu_url" default="udp://:14540@127.0.0.1:14557" />
+	<arg name="gcs_url" default="udp://:14560@127.0.0.1:14550" />  <!-- this line is for connection to qgc: 14550 and 14560 are unused ports -->
+<!--concept given here 	https://dev.px4.io/v1.9.0/en/simulation/hitl.html -->
+
+	<arg name="tgt_system" default="1" />
+	<arg name="tgt_component" default="1" />
+	<arg name="log_output" default="screen" />
+	<arg name="fcu_protocol" default="v2.0" />
+	<arg name="respawn_mavros" default="false" />
+
+	<include file="$(find mavros)/launch/node.launch">
+		<arg name="pluginlists_yaml" value="$(find mavros)/launch/px4_pluginlists.yaml" />
+		<arg name="config_yaml" value="$(find mavros)/launch/px4_config_Sim.yaml" />
+
+		<arg name="fcu_url" value="$(arg fcu_url)" />
+		<arg name="gcs_url" value="$(arg gcs_url)" />
+		<arg name="tgt_system" value="$(arg tgt_system)" />
+		<arg name="tgt_component" value="$(arg tgt_component)" />
+		<arg name="log_output" value="$(arg log_output)" />
+		<arg name="fcu_protocol" value="$(arg fcu_protocol)" />
+		<arg name="respawn_mavros" default="$(arg respawn_mavros)" />
+	</include>
+
+<!-- 	the next two nodes added for px4 to know the transformation  between mavros frame and global frame read https://dev.px4.io/v1.10/en/ros/external_position_estimation.html#ros_reference_frames -->
+
+
+
+	<node pkg="tf" type="static_transform_publisher" name="tf_baseLink_externalPoseChildFrame" args="0 0 0 0 0 0 base_link vicon/quad/quad 1"/>
+
+	<node pkg="tf" type="static_transform_publisher" name="tf_odom_externalPoseParentFrame"
+        args="0 0 0 0 0 0 odom /world 1"/>
+
+
+</launch>
